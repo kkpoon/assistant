@@ -1,1 +1,3 @@
-# bot-starter
+# assistant
+
+kkpoon's personal assistant

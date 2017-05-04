@@ -1,0 +1,47 @@
+{
+    "name": "kkpoon-assistant",
+    "version": "1.0.0",
+    "description": "kkpoon personal assistant",
+    "main": "lib/index.js",
+    "private": true,
+    "scripts": {
+        "gulp": "gulp",
+        "build": "tsc",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "deploy:lambda": "gulp deploy:lambda"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kkpoon/assistant.git"
+    },
+    "author": "kkpoon <noopkk@gmail.com>",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/kkpoon/assistant/issues"
+    },
+    "homepage": "https://github.com/kkpoon/assistant#readme",
+    "devDependencies": {
+        "@types/aws-lambda": "^0.0.10",
+        "@types/aws-serverless-express": "^2.1.0",
+        "@types/body-parser": "^1.16.3",
+        "@types/express": "^4.0.35",
+        "@types/morgan": "^1.7.32",
+        "@types/node-fetch": "^1.6.7",
+        "del": "^2.2.2",
+        "gulp": "^3.9.1",
+        "gulp-awslambda": "^0.4.0",
+        "gulp-install": "^1.1.0",
+        "gulp-typescript": "^3.1.6",
+        "gulp-zip": "^4.0.0",
+        "run-sequence": "^1.2.2",
+        "typescript": "^2.3.2"
+    },
+    "dependencies": {
+        "@reactivex/rxjs": "^5.3.1",
+        "aws-serverless-express": "^2.2.0",
+        "body-parser": "^1.17.1",
+        "express": "^4.15.2",
+        "morgan": "^1.8.1",
+        "node-fetch": "^1.6.3"
+    }
+}
