@@ -1,6 +1,6 @@
 import * as express from "express";
 import * as Rx from "@reactivex/rxjs";
-import { SendAPIConnector, sendTextMessage } from "./send-api";
+import { CreateMessageHandler } from "./message";
 
 export const WebhookValidationHandler =
     (VALIDATION_TOKEN: string) =>
@@ -15,46 +15,22 @@ export const WebhookValidationHandler =
             }
         };
 
-export const WebhookMessageHandler = (sendAPIConnector: SendAPIConnector) =>
+export const WebhookMessageHandler = (PAGE_ACCESS_TOKEN: string) =>
     (req: express.Request, res: express.Response, next: express.NextFunction) => {
         let data = req.body;
         console.log("message received: " + JSON.stringify(data));
         if (data.object === "page") {
+            let messageHandler = CreateMessageHandler(PAGE_ACCESS_TOKEN);
             Rx.Observable.from(data.entry || [])
                 .mergeMap((entry: any) => Rx.Observable.from(entry.messaging))
-                .mergeMap((event: any) => {
-                    if (event.message) {
-                        return handleMessageEventObservable(sendAPIConnector, event);
-                    } else if (event.postback) {
-                        return handlePostbackEventObservable(sendAPIConnector, event);
-                    }
-                    return Rx.Observable.empty();
-                })
-                .subscribe(() => {
-                    res.sendStatus(200);
+                .mergeMap(messageEvent => Rx.Observable.fromPromise(messageHandler(messageEvent)))
+                .subscribe((event) => {
+                    console.log("message handled, result: " + event.result);
                 }, (err: Error) => {
+                    console.error("Error: " + err);
                     res.status(500).send(err);
-                })
+                }, () => {
+                    res.sendStatus(200);
+                });
         }
-    };
-
-const handleMessageEventObservable =
-    (sendAPIConnector: SendAPIConnector, event: any) => {
-        var senderID = event.sender.id;
-        let message = event.message;
-        let messageText = message.text;
-
-        if (message.is_echo) {
-            return Rx.Observable.empty();
-        }
-        console.log("Echo back text message");
-        return Rx.Observable.fromPromise(
-            sendTextMessage(sendAPIConnector, senderID, messageText)
-        );
-    };
-
-const handlePostbackEventObservable =
-    (event: any, sendAPIConnector: SendAPIConnector) => {
-        let postback = event.postback;
-        return Rx.Observable.empty();
     };
