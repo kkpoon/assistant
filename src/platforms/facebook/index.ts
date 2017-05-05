@@ -1,10 +1,7 @@
 import * as crypto from "crypto";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import * as Rx from "@reactivex/rxjs";
-
 import { WebhookValidationHandler, WebhookMessageHandler } from "./webhook";
-import { SendAPIConnector, CreateSendAPIConnector } from "./send-api";
 
 export interface MessengerBotOptions {
     PAGE_ACCESS_TOKEN: string;
@@ -14,12 +11,10 @@ export interface MessengerBotOptions {
 
 export function CreateMessengerBot(options: MessengerBotOptions): express.Router {
     const verifySignature = SignatureVerifier(options.APP_SECRET);
-    const sendAPIConnector = CreateSendAPIConnector(options.PAGE_ACCESS_TOKEN);
-
     const router = express.Router();
     router.use(bodyParser.json({ verify: verifySignature }));
     router.get('/webhook', WebhookValidationHandler(options.VALIDATION_TOKEN));
-    router.post("/webhook", WebhookMessageHandler(sendAPIConnector));
+    router.post("/webhook", WebhookMessageHandler(options.PAGE_ACCESS_TOKEN));
     return router;
 }
 
