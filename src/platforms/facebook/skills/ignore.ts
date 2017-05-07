@@ -1,5 +1,5 @@
-export default (messageEvent: any) => {
+export default () => {
     return new Promise((resolve, reject) => {
-        resolve({ messageEvent, result: "echo message, do nothing" });
+        resolve("echo message, do nothing");
     });
 };

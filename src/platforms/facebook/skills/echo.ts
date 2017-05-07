@@ -1,12 +1,10 @@
-import { MessageSender, SendTextMessage} from "../send-api";
+import { MessageSender, SendTextMessage } from "../send-api";
 
-export default (sendMessage: MessageSender, messageEvent: any) => {
-    let senderID = messageEvent.sender.id;
-    let message = messageEvent.message;
-    let text = message.text;
-    return SendTextMessage(sendMessage, senderID, text)
-        .then(() => ({
-            messageEvent,
-            result: "response by echo back text message"
-        }));
+export default (
+    sendMessage: MessageSender,
+    recipientID: string,
+    text: string
+) => {
+    return SendTextMessage(sendMessage, recipientID, text)
+        .then(() => "response by text message");
 };

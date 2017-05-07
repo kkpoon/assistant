@@ -33,7 +33,7 @@ gulp.task("upload", function() {
                     FunctionName: "kkpoon_assistant",
                     Handler: "index.handler",
                     Role: process.env.LAMBDA_ROLE_ARN,
-                    Timeout: 20,
+                    Timeout: 10,
                     MemorySize: 128,
                     Runtime: "nodejs6.10",
                     Environment: {

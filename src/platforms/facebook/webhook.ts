@@ -20,16 +20,18 @@ export const WebhookMessageHandler = (PAGE_ACCESS_TOKEN: string) =>
         let data = req.body;
         console.log("message received: " + JSON.stringify(data));
         if (data.object === "page") {
-            let messageHandler = CreateMessageHandler(PAGE_ACCESS_TOKEN);
+            let handledMessage$ = CreateMessageHandler(PAGE_ACCESS_TOKEN);
             Rx.Observable.from(data.entry || [])
                 .mergeMap((entry: any) => Rx.Observable.from(entry.messaging))
-                .mergeMap(messageEvent => Rx.Observable.fromPromise(messageHandler(messageEvent)))
-                .subscribe((event) => {
-                    console.log("message handled, result: " + event.result);
+                .mergeMap(messageEvent => handledMessage$(messageEvent))
+                .subscribe((result) => {
+                    console.log("[facebook/webhook] message handled, result: " + result);
                 }, (err: Error) => {
-                    console.error("Error: " + err);
-                    res.status(500).send(err);
+                    console.error("[facebook/webhook] Error: " + err);
+                    console.error("[facebook/webhook] send HTTP 200 status");
+                    res.sendStatus(200);
                 }, () => {
+                    console.error("[facebook/webhook] send HTTP 200 status");
                     res.sendStatus(200);
                 });
         }
