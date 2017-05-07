@@ -20,12 +20,12 @@ export const WebhookMessageHandler = (PAGE_ACCESS_TOKEN: string) =>
         let data = req.body;
         console.log("message received: " + JSON.stringify(data));
         if (data.object === "page") {
-            let messageHandler = CreateMessageHandler(PAGE_ACCESS_TOKEN);
+            let handledMessage$ = CreateMessageHandler(PAGE_ACCESS_TOKEN);
             Rx.Observable.from(data.entry || [])
                 .mergeMap((entry: any) => Rx.Observable.from(entry.messaging))
-                .mergeMap(messageEvent => Rx.Observable.fromPromise(messageHandler(messageEvent)))
-                .subscribe((event) => {
-                    console.log("message handled, result: " + event.result);
+                .mergeMap(messageEvent => handledMessage$(messageEvent))
+                .subscribe((result) => {
+                    console.log("message handled, result: " + result);
                 }, (err: Error) => {
                     console.error("Error: " + err);
                     res.status(500).send(err);

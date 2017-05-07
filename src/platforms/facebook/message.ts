@@ -1,4 +1,5 @@
-import { Say, Echo, Sorry, Ignore } from "./skills";
+import * as Rx from "@reactivex/rxjs";
+import { Say, Echo, Sorry, Ignore, LabelImage } from "./skills";
 import {
     MessageSender,
     MessageSenderWithAttachementUpload,
@@ -7,53 +8,111 @@ import {
 } from "./send-api";
 
 enum MessageEventType {
-    UNKNOWN,
-    TEXT,
-    ECHO,
-    POSTBACK
+    UNKNOWN, TEXT, ATTACHMENTS, ECHO, POSTBACK
 }
 
-interface HandledMessageEvent {
-    messageEvent: any;
-    result: string;
+interface Attachment {
+    type: string;
+    payload: { url?: string; };
 }
 
-type MessageEventHandler = (messageEvent: any) => Promise<HandledMessageEvent>;
+export const CreateMessageHandler = (PAGE_ACCESS_TOKEN: string) => {
+    const msgSender =
+        CreateMessageSender(PAGE_ACCESS_TOKEN);
+    const attSender =
+        CreateMessageSenderWithAttachmentUpload(PAGE_ACCESS_TOKEN);
 
+    return (event: any): Rx.Observable<string> => {
+        let userID = event.sender.id;
 
-export const CreateMessageHandler =
-    (PAGE_ACCESS_TOKEN: string): MessageEventHandler => {
-        const messageSender =
-            CreateMessageSender(PAGE_ACCESS_TOKEN);
-        const attachmentMessageSender =
-            CreateMessageSenderWithAttachmentUpload(PAGE_ACCESS_TOKEN);
+        return Rx.Observable.of(event)
+            .mergeMap((event) => {
+                switch (detectMessageEventType(event)) {
+                    case MessageEventType.ECHO:
+                        return Rx.Observable.fromPromise(
+                            Ignore()
+                        );
+                    case MessageEventType.TEXT:
+                        return handleTextMessage$(
+                            msgSender,
+                            attSender,
+                            event
+                        );
+                    case MessageEventType.ATTACHMENTS:
+                        return handleAttachmentsMessage$(
+                            msgSender,
+                            attSender,
+                            event
+                        );
+                    default:
+                        return Rx.Observable.fromPromise(
+                            Sorry(msgSender, userID)
+                        );
+                }
+            })
+            .catch((err) => {
+                console.error("message handle error: " + err);
+                return Rx.Observable.fromPromise(
+                    Echo(msgSender, userID, "Sorry, I've got brain problems.")
+                );
+            });
+    };
+}
 
-        return (event) => {
-            switch (detectMessageEventType(event)) {
-                case MessageEventType.ECHO:
-                    return Ignore(event);
-                case MessageEventType.TEXT:
-                    return handleTextMessage(
-                        messageSender,
-                        attachmentMessageSender,
-                        event
-                    );
-                default:
-                    return Sorry(messageSender, event);
-            }
-        };
+const handleTextMessage$ = (
+    messageSender: MessageSender,
+    attachmentMessageSender: MessageSenderWithAttachementUpload,
+    messageEvent: any
+) => {
+    let userID = messageEvent.sender.id;
+    let message = messageEvent.message;
+    let messageText = message.text;
+
+    if (messageText.match(/^say (.+)$/i)) {
+        return Rx.Observable
+            .fromPromise(Say(attachmentMessageSender, userID, messageText));
     }
 
-const handleTextMessage = (
+    return Rx.Observable
+        .fromPromise(Echo(messageSender, userID, messageText));
+};
+
+const handleAttachmentsMessage$ = (
     messageSender: MessageSender,
     attachmentMessageSender: MessageSenderWithAttachementUpload,
     messageEvent: any
 ) => {
     let message = messageEvent.message;
-    if (message.text.match(/^say (.+)$/i)) {
-        return Say(attachmentMessageSender, messageEvent);
-    }
-    return Echo(messageSender, messageEvent);
+    let userID = messageEvent.sender.id;
+    let attachments = message.attachments;
+
+    return Rx.Observable.from(attachments)
+        .mergeMap((att: Attachment) => {
+            switch (att.type) {
+                case "image":
+                    if (att.payload && att.payload.url) {
+                        return Rx.Observable.fromPromise(
+                            LabelImage(
+                                messageSender,
+                                userID,
+                                att.payload.url
+                            )
+                        );
+                    } else {
+                        return Rx.Observable.fromPromise(
+                            Echo(
+                                messageSender,
+                                userID,
+                                "Sorry, I can't view the image"
+                            )
+                        );
+                    }
+                default:
+                    return Rx.Observable.fromPromise(
+                        Sorry(messageSender, userID)
+                    );
+            }
+        });
 };
 
 const detectMessageEventType = (messageEvent: any): MessageEventType => {
@@ -64,6 +123,8 @@ const detectMessageEventType = (messageEvent: any): MessageEventType => {
             return MessageEventType.ECHO;
         } else if (message.text) {
             return MessageEventType.TEXT;
+        } else if (message.attachments) {
+            return MessageEventType.ATTACHMENTS;
         }
     } else if (messageEvent.postback) {
         return MessageEventType.POSTBACK;
