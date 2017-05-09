@@ -16,7 +16,7 @@ enum MessageEventType {
 
 interface Attachment {
     type: string;
-    payload: { url?: string; };
+    payload: { url?: string; sticker_id?: number };
 }
 
 export const CreateMessageHandler = (PAGE_ACCESS_TOKEN: string) => {
@@ -112,7 +112,9 @@ const handleAttachmentsMessage$ = (
 
 const handleImageMessage$ = (messageSender: MessageSender) =>
     (userID: string, att: Attachment) => {
-        if (att.payload && att.payload.url) {
+        if (att.payload && att.payload.sticker_id) {
+            return Rx.Observable.fromPromise(Ignore());
+        } else if (att.payload && att.payload.url) {
             return Rx.Observable.fromPromise(
                 LabelImage(messageSender, userID, att.payload.url)
             );
