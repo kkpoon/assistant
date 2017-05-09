@@ -18,7 +18,7 @@ export const WebhookValidationHandler =
 export const WebhookMessageHandler = (PAGE_ACCESS_TOKEN: string) =>
     (req: express.Request, res: express.Response, next: express.NextFunction) => {
         let data = req.body;
-        console.log("message received: " + JSON.stringify(data));
+        console.log("[facebook/webhook] message received: " + JSON.stringify(data));
         if (data.object === "page") {
             let handledMessage$ = CreateMessageHandler(PAGE_ACCESS_TOKEN);
             Rx.Observable.from(data.entry || [])
@@ -34,5 +34,8 @@ export const WebhookMessageHandler = (PAGE_ACCESS_TOKEN: string) =>
                     console.error("[facebook/webhook] send HTTP 200 status");
                     res.sendStatus(200);
                 });
+        } else {
+            console.error("[facebook/webhook] send HTTP 200 status");
+            res.sendStatus(200);
         }
     };
