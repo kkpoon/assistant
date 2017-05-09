@@ -10,12 +10,7 @@ export const PollySpeak =
                 VoiceId: "Joanna",
                 SampleRate: "8000",
                 TextType: "text"
-            }, function (err, data) {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve(data);
-            });
+            }, (err, data) => err ? reject(err) : resolve(data));
         });
 
 export const RekognitionImageLabels =
@@ -25,10 +20,18 @@ export const RekognitionImageLabels =
             rekognition.detectLabels({
                 Image: { Bytes: image },
                 MinConfidence: 0.7
-            }, function (err, data) {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve(data);
-            });
+            }, (err, data) => err ? reject(err) : resolve(data));
         });
+
+export const Lex =
+    (botName: string, botAlias: string) =>
+        (userID: string, text: string) =>
+            new Promise((resolve, reject) => {
+                const lexruntime = new AWS.LexRuntime();
+                lexruntime.postText({
+                    botAlias: botAlias,
+                    botName: botName,
+                    inputText: text,
+                    userId: userID
+                }, (err, data) => err ? reject(err) : resolve(data));
+            });
