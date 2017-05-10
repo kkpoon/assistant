@@ -1,5 +1,5 @@
 import * as Rx from "@reactivex/rxjs";
-import { Say, Echo, Sorry, Ignore, LabelImage, NLP } from "./skills";
+import { Say, Echo, Sorry, Ignore, LabelImage, Lex } from "./skills";
 import {
     MessageSender,
     MessageSenderWithAttachementUpload,
@@ -84,7 +84,7 @@ const handleTextMessage$ = (
         );
     }
 
-    return Rx.Observable.fromPromise(NLP(messageSender, userID, messageText));
+    return Rx.Observable.fromPromise(Lex(messageSender, userID, messageText));
 };
 
 const handleAttachmentsMessage$ = (
