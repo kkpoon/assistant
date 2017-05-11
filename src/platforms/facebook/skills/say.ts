@@ -1,4 +1,4 @@
-import { PollySpeak } from "../../../services/aws";
+import { PollySpeakSSML } from "../../../services/aws";
 import {
     MessageSenderWithAttachementUpload,
     SendAudioMessage
@@ -12,8 +12,11 @@ export default (
     return new Promise((resolve, reject) => {
         let matchSay = messageText.match(/^say (.+)$/i);
         if (matchSay && matchSay.length > 0 && matchSay[1]) {
+            let convertedSay = matchSay[1]
+                .replace(/"([^".]*)"/i, (a, b) => "<emphasis level=\"strong\">" + b + "</emphasis>");
+            let speech = `<speak>${convertedSay}</speak>`;
             return resolve(
-                PollySpeak(matchSay[1])
+                PollySpeakSSML(speech)
                     .then((data: AWS.Polly.SynthesizeSpeechOutput) =>
                         SendAudioMessage(
                             sendMessage,
