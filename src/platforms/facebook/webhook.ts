@@ -15,12 +15,12 @@ export const WebhookValidationHandler =
             }
         };
 
-export const WebhookMessageHandler = (PAGE_ACCESS_TOKEN: string) =>
+export const WebhookMessageHandler = (PAGE_ACCESS_TOKEN: string, GOOGLE_APIKEY: string) =>
     (req: express.Request, res: express.Response, next: express.NextFunction) => {
         let data = req.body;
         console.log("[facebook/webhook] message received: " + JSON.stringify(data));
         if (data.object === "page") {
-            let handledMessage$ = CreateMessageHandler(PAGE_ACCESS_TOKEN);
+            let handledMessage$ = CreateMessageHandler(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY);
             Rx.Observable.from(data.entry || [])
                 .mergeMap((entry: any) => Rx.Observable.from(entry.messaging))
                 .mergeMap(messageEvent => handledMessage$(messageEvent))

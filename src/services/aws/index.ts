@@ -1,30 +1,49 @@
 import * as AWS from "aws-sdk";
+import * as _ from "lodash";
 
 export const PollySpeakText =
-    (text: string): Promise<AWS.Polly.SynthesizeSpeechOutput> =>
+    (text: string, voiceID: string): Promise<AWS.Polly.SynthesizeSpeechOutput> =>
         new Promise((resolve, reject) => {
             const polly = new AWS.Polly();
             polly.synthesizeSpeech({
                 OutputFormat: "mp3",
                 Text: text,
-                VoiceId: "Joanna",
-                SampleRate: "16000",
+                VoiceId: voiceID,
+                SampleRate: "22050",
                 TextType: "text"
             }, (err, data) => err ? reject(err) : resolve(data));
         });
 
 export const PollySpeakSSML =
-    (text: string): Promise<AWS.Polly.SynthesizeSpeechOutput> =>
+    (text: string, voiceID: string): Promise<AWS.Polly.SynthesizeSpeechOutput> =>
         new Promise((resolve, reject) => {
             const polly = new AWS.Polly();
             polly.synthesizeSpeech({
                 OutputFormat: "mp3",
                 Text: text,
-                VoiceId: "Joanna",
-                SampleRate: "16000",
+                VoiceId: voiceID,
+                SampleRate: "22050",
                 TextType: "ssml"
             }, (err, data) => err ? reject(err) : resolve(data));
         });
+
+
+export const PollyGetVoice = (language: string): Promise<string> =>
+    new Promise((resolve, reject) => {
+        const polly = new AWS.Polly()
+        polly.describeVoices({
+            LanguageCode: language
+        }, (err, data) => {
+            if (err) {
+                return reject(err);
+            }
+            let firstChoice = _.head(data.Voices);
+            if (firstChoice) {
+                return resolve(firstChoice.Id)
+            }
+            return resolve("Joanna");
+        });
+    });
 
 export const RekognitionImageLabels =
     (image: Buffer): Promise<AWS.Rekognition.DetectLabelsResponse> =>

@@ -7,7 +7,8 @@ const messengerWebhookServer = awsServerlessExpress
         messenger: {
             PAGE_ACCESS_TOKEN: process.env.FACEBOOK_PAGE_ACCESS_TOKEN,
             APP_SECRET: process.env.FACEBOOK_APP_SECRET,
-            VALIDATION_TOKEN: process.env.FACEBOOK_VALIDATION_TOKEN
+            VALIDATION_TOKEN: process.env.FACEBOOK_VALIDATION_TOKEN,
+            GOOGLE_APIKEY: process.env.GOOGLE_APIKEY
         }
     }));
 

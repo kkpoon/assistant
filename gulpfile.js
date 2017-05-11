@@ -43,7 +43,9 @@ gulp.task("upload", function() {
                             FACEBOOK_APP_SECRET: process.env
                                 .FACEBOOK_APP_SECRET,
                             FACEBOOK_VALIDATION_TOKEN: process.env
-                                .FACEBOOK_VALIDATION_TOKEN
+                                .FACEBOOK_VALIDATION_TOKEN,
+                            GOOGLE_APIKEY: process.env
+                                .GOOGLE_APIKEY
                         }
                     }
                 },

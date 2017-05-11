@@ -7,6 +7,7 @@ export interface MessengerBotOptions {
     PAGE_ACCESS_TOKEN: string;
     APP_SECRET: string;
     VALIDATION_TOKEN: string;
+    GOOGLE_APIKEY: string;
 };
 
 export function CreateMessengerBot(options: MessengerBotOptions): express.Router {
@@ -14,7 +15,7 @@ export function CreateMessengerBot(options: MessengerBotOptions): express.Router
     const router = express.Router();
     router.use(bodyParser.json({ verify: verifySignature }));
     router.get('/webhook', WebhookValidationHandler(options.VALIDATION_TOKEN));
-    router.post("/webhook", WebhookMessageHandler(options.PAGE_ACCESS_TOKEN));
+    router.post("/webhook", WebhookMessageHandler(options.PAGE_ACCESS_TOKEN, options.GOOGLE_APIKEY));
     return router;
 }
 

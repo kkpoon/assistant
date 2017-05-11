@@ -19,7 +19,7 @@ interface Attachment {
     payload: { url?: string; sticker_id?: number };
 }
 
-export const CreateMessageHandler = (PAGE_ACCESS_TOKEN: string) => {
+export const CreateMessageHandler = (PAGE_ACCESS_TOKEN: string, GOOGLE_APIKEY: string) => {
     const msgSender =
         CreateMessageSender(PAGE_ACCESS_TOKEN);
     const attSender =
@@ -37,7 +37,7 @@ export const CreateMessageHandler = (PAGE_ACCESS_TOKEN: string) => {
                 Rx.Observable.fromPromise(SendTypingOn(msgSender, userID))
                     .map(() => event)
             )
-            .mergeMap(handleMessage$(msgSender, attSender))
+            .mergeMap(handleMessage$(msgSender, attSender, GOOGLE_APIKEY))
             .catch((err) => {
                 console.error("[facebook/message] message handle error: " + err);
                 return Rx.Observable.fromPromise(
@@ -53,7 +53,8 @@ export const CreateMessageHandler = (PAGE_ACCESS_TOKEN: string) => {
 
 const handleMessage$ = (
     msgSender: MessageSender,
-    attSender: MessageSenderWithAttachementUpload
+    attSender: MessageSenderWithAttachementUpload,
+    GOOGLE_APIKEY: string
 ) => (event: any): Rx.Observable<string> => {
     let userID = event.sender.id;
 
@@ -61,7 +62,7 @@ const handleMessage$ = (
         case MessageEventType.ECHO:
             return Rx.Observable.fromPromise(Ignore());
         case MessageEventType.TEXT:
-            return handleTextMessage$(msgSender, attSender, event);
+            return handleTextMessage$(msgSender, attSender, GOOGLE_APIKEY, event);
         case MessageEventType.ATTACHMENTS:
             return handleAttachmentsMessage$(msgSender, attSender, event);
         default:
@@ -72,7 +73,8 @@ const handleMessage$ = (
 const handleTextMessage$ = (
     messageSender: MessageSender,
     attachmentMessageSender: MessageSenderWithAttachementUpload,
-    messageEvent: any
+    GOOGLE_APIKEY: string,
+    messageEvent: any,
 ) => {
     let userID = messageEvent.sender.id;
     let message = messageEvent.message;
@@ -80,7 +82,7 @@ const handleTextMessage$ = (
 
     if (messageText.match(/^say (.+)$/i)) {
         return Rx.Observable.fromPromise(
-            Say(attachmentMessageSender, userID, messageText)
+            Say(attachmentMessageSender, GOOGLE_APIKEY, userID, messageText)
         );
     }
 
