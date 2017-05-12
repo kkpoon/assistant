@@ -20,57 +20,44 @@ interface Attachment {
 }
 
 export const CreateMessageHandler = (PAGE_ACCESS_TOKEN: string, GOOGLE_APIKEY: string) => {
-    const msgSender =
-        CreateMessageSender(PAGE_ACCESS_TOKEN);
-    const attSender =
-        CreateMessageSenderWithAttachmentUpload(PAGE_ACCESS_TOKEN);
+    const msgSender = CreateMessageSender(PAGE_ACCESS_TOKEN);
+    const attSender = CreateMessageSenderWithAttachmentUpload(PAGE_ACCESS_TOKEN);
 
-    return (event: any): Rx.Observable<string> => {
+    return (event: any): Promise<string> => {
         let userID = event.sender.id;
 
-        return Rx.Observable.of(event)
-            .mergeMap((event) =>
-                Rx.Observable.fromPromise(SendMarkSeen(msgSender, userID))
-                    .map(() => event)
-            )
-            .mergeMap((event) =>
-                Rx.Observable.fromPromise(SendTypingOn(msgSender, userID))
-                    .map(() => event)
-            )
-            .mergeMap(handleMessage$(msgSender, attSender, GOOGLE_APIKEY))
+        return SendMarkSeen(msgSender, userID)
+            .then(() => SendTypingOn(msgSender, userID))
+            .then(() => handleMessage(msgSender, attSender, GOOGLE_APIKEY, event))
             .catch((err) => {
                 console.error("[facebook/message] message handle error: " + err);
-                return Rx.Observable.fromPromise(
-                    Echo(msgSender, userID, "Sorry, I've got brain problems.")
-                );
+                return Echo(msgSender, userID, "Sorry, I've got brain problems.");
             })
-            .mergeMap((data) =>
-                Rx.Observable.fromPromise(SendTypingOff(msgSender, userID))
-                    .map(() => data)
-            );
+            .then((result) => SendTypingOff(msgSender, userID).then(() => result));
     };
 }
 
-const handleMessage$ = (
+const handleMessage = (
     msgSender: MessageSender,
     attSender: MessageSenderWithAttachementUpload,
-    GOOGLE_APIKEY: string
-) => (event: any): Rx.Observable<string> => {
+    GOOGLE_APIKEY: string,
+    event: any
+): Promise<string> => {
     let userID = event.sender.id;
 
     switch (detectMessageEventType(event)) {
         case MessageEventType.ECHO:
-            return Rx.Observable.fromPromise(Ignore());
+            return Ignore();
         case MessageEventType.TEXT:
-            return handleTextMessage$(msgSender, attSender, GOOGLE_APIKEY, event);
+            return handleTextMessage(msgSender, attSender, GOOGLE_APIKEY, event);
         case MessageEventType.ATTACHMENTS:
-            return handleAttachmentsMessage$(msgSender, attSender, event);
+            return handleAttachmentsMessage(msgSender, attSender, event);
         default:
-            return Rx.Observable.fromPromise(Sorry(msgSender, userID));
+            return Sorry(msgSender, userID);
     }
 };
 
-const handleTextMessage$ = (
+const handleTextMessage = (
     messageSender: MessageSender,
     attachmentMessageSender: MessageSenderWithAttachementUpload,
     GOOGLE_APIKEY: string,
@@ -81,15 +68,13 @@ const handleTextMessage$ = (
     let messageText = message.text;
 
     if (messageText.match(/^say (.+)$/i)) {
-        return Rx.Observable.fromPromise(
-            Say(attachmentMessageSender, GOOGLE_APIKEY, userID, messageText)
-        );
+        return Say(messageSender, attachmentMessageSender, GOOGLE_APIKEY, userID, messageText);
     }
 
-    return Rx.Observable.fromPromise(Lex(messageSender, userID, messageText));
+    return Lex(messageSender, userID, messageText);
 };
 
-const handleAttachmentsMessage$ = (
+const handleAttachmentsMessage = (
     messageSender: MessageSender,
     attachmentMessageSender: MessageSenderWithAttachementUpload,
     messageEvent: any
@@ -97,35 +82,38 @@ const handleAttachmentsMessage$ = (
     let message = messageEvent.message;
     let userID = messageEvent.sender.id;
     let attachments = message.attachments;
-    let imageMsgHandler = handleImageMessage$(messageSender);
 
     return Rx.Observable.from(attachments)
         .mergeMap((att: Attachment) => {
             switch (att.type) {
                 case "image":
-                    return imageMsgHandler(userID, att);
+                    return Rx.Observable.fromPromise(
+                        handleImageMessage(messageSender, userID, att)
+                    );
                 default:
                     return Rx.Observable.fromPromise(
                         Sorry(messageSender, userID)
                     );
             }
-        });
+        })
+        .toArray()
+        .map(results => results.join(", "))
+        .toPromise();
 };
 
-const handleImageMessage$ = (messageSender: MessageSender) =>
-    (userID: string, att: Attachment) => {
-        if (att.payload && att.payload.sticker_id) {
-            return Rx.Observable.fromPromise(Ignore());
-        } else if (att.payload && att.payload.url) {
-            return Rx.Observable.fromPromise(
-                LabelImage(messageSender, userID, att.payload.url)
-            );
-        } else {
-            return Rx.Observable.fromPromise(
-                Echo(messageSender, userID, "Sorry, I can't get the image")
-            );
-        }
-    };
+const handleImageMessage = (
+    messageSender: MessageSender,
+    userID: string,
+    att: Attachment
+) => {
+    if (att.payload && att.payload.sticker_id) {
+        return Ignore();
+    } else if (att.payload && att.payload.url) {
+        return LabelImage(messageSender, userID, att.payload.url);
+    } else {
+        return Echo(messageSender, userID, "Sorry, I can't get the image");
+    }
+};
 
 const detectMessageEventType = (messageEvent: any): MessageEventType => {
     if (messageEvent.message) {

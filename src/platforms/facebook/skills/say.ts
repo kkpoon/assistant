@@ -1,12 +1,15 @@
 import { PollySpeakSSML, PollyGetVoice } from "../../../services/aws";
 import { DetectLanguage } from "../../../services/google-cloud";
 import {
+    MessageSender,
     MessageSenderWithAttachementUpload,
+    SendTextMessage,
     SendAudioMessage
 } from "../send-api";
 
 export default (
-    sendMessage: MessageSenderWithAttachementUpload,
+    sendMessage: MessageSender,
+    sendAttMessage: MessageSenderWithAttachementUpload,
     googleCloudAPIkey: string,
     recipientID: string,
     messageText: string
@@ -20,9 +23,11 @@ export default (
             return resolve(
                 DetectLanguage(googleCloudAPIkey)(inputSay)
                     .then(toAWSLanguageCode)
+                    .then((code) => code ? code : new Error("Language not supported"))
                     .then(PollyGetVoice)
                     .then((voiceID) => PollySpeakSSML(speech, voiceID))
-                    .then((data) => SendAudioMessage(sendMessage, recipientID, <ReadableStream>data.AudioStream))
+                    .then((data) => SendAudioMessage(sendAttMessage, recipientID, <ReadableStream>data.AudioStream))
+                    .catch((err) => SendTextMessage(sendMessage, recipientID, "I don't know how to speak in this language"))
                     .then(() => "response by voice message")
             );
         }
@@ -51,7 +56,7 @@ const LANGUAGE_CODE_GOOOGLE_TO_AWS: any = {
 };
 
 const toAWSLanguageCode = (googleLangCode: string) =>
-    LANGUAGE_CODE_GOOOGLE_TO_AWS[googleLangCode] || "en-US";
+    LANGUAGE_CODE_GOOOGLE_TO_AWS[googleLangCode];
 
 
 

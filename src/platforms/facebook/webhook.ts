@@ -20,10 +20,10 @@ export const WebhookMessageHandler = (PAGE_ACCESS_TOKEN: string, GOOGLE_APIKEY: 
         let data = req.body;
         console.log("[facebook/webhook] message received: " + JSON.stringify(data));
         if (data.object === "page") {
-            let handledMessage$ = CreateMessageHandler(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY);
+            let handledMessage = CreateMessageHandler(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY);
             Rx.Observable.from(data.entry || [])
                 .mergeMap((entry: any) => Rx.Observable.from(entry.messaging))
-                .mergeMap(messageEvent => handledMessage$(messageEvent))
+                .mergeMap(messageEvent => Rx.Observable.fromPromise(handledMessage(messageEvent)))
                 .subscribe((result) => {
                     console.log("[facebook/webhook] message handled, result: " + result);
                 }, (err: Error) => {

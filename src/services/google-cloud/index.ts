@@ -23,5 +23,5 @@ export const DetectLanguage = (apikey: string) => (text: string): Promise<string
                 result.data.detections[0]
                     .sort((a, b) => b.confidence - a.confidence)
                     .map((d) => d.language)
-            ) || "en"
+            ) || "UNKNOWN"
         );
