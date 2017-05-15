@@ -1,20 +1,13 @@
-import { PollySpeakSSML, PollyGetVoice } from "../../../services/aws";
-import { DetectLanguage } from "../../../services/google-cloud";
-import {
-    MessageSender,
-    MessageSenderWithAttachementUpload,
-    SendTextMessage,
-    SendAudioMessage
-} from "../send-api";
+import { PollySpeakSSML, PollyGetVoice } from "../services/aws";
+import { DetectLanguage } from "../services/google-cloud";
 
 export default (
-    sendMessage: MessageSender,
-    sendAttMessage: MessageSenderWithAttachementUpload,
+    sendTextMessage: (text: string) => Promise<any>,
+    sendAudioMessage: (audio: ReadableStream) => Promise<any>,
     googleCloudAPIkey: string,
-    recipientID: string,
     messageText: string
-) => {
-    return new Promise((resolve, reject) => {
+): Promise<string> =>
+    new Promise((resolve, reject) => {
         let matchSay = messageText.match(/^say (.+)$/i);
         if (matchSay && matchSay.length > 0 && matchSay[1]) {
             let inputSay = matchSay[1];
@@ -26,14 +19,14 @@ export default (
                     .then((code) => code ? code : new Error("Language not supported"))
                     .then(PollyGetVoice)
                     .then((voiceID) => PollySpeakSSML(speech, voiceID))
-                    .then((data) => SendAudioMessage(sendAttMessage, recipientID, <ReadableStream>data.AudioStream))
-                    .catch((err) => SendTextMessage(sendMessage, recipientID, "I don't know how to speak in this language"))
+                    .then((data) => sendAudioMessage(<ReadableStream>data.AudioStream))
+                    .catch((err) => sendTextMessage("I don't know how to speak in this language"))
                     .then(() => "response by voice message")
             );
         }
         return reject(new Error("invalid say command format"));
     });
-};
+
 
 const LANGUAGE_CODE_GOOOGLE_TO_AWS: any = {
     "cy": "cy-GB",
@@ -57,6 +50,3 @@ const LANGUAGE_CODE_GOOOGLE_TO_AWS: any = {
 
 const toAWSLanguageCode = (googleLangCode: string) =>
     LANGUAGE_CODE_GOOOGLE_TO_AWS[googleLangCode];
-
-
-

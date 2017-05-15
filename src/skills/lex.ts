@@ -1,10 +1,6 @@
-import {
-    MessageSender,
-    SendTextMessage,
-    SendTextMessageWithQuickReplies
-} from "../send-api";
-import { Lex } from "../../../services/aws";
+import { Lex } from "../services/aws";
 import { Sorry } from "./";
+import { QuickReply } from "../message-sender";
 
 const HELP_MESSAGE = `It's been my pleasure to serve you.
 1. You could ask me to say something in English. Just ask me "say blah blah blah".
@@ -14,17 +10,22 @@ const HELP_MESSAGE = `It's been my pleasure to serve you.
 Just send me "I would like to take leave", or "I would like to take annual leave from tomorrow to next friday" etc.
 `;
 
-export default (sendMessage: MessageSender, userID: string, text: string) => {
-    return Lex("CompanyBot", "beta")(userID, text)
+export default (
+    sendTextMessage: (text: string) => Promise<any>,
+    sendQuickReplyMessage: (text: string) => (replies: QuickReply[]) => Promise<any>,
+    userID: string,
+    text: string
+): Promise<string> =>
+    Lex("CompanyBot", "beta")(userID, text)
         .then((data: AWS.LexRuntime.PostTextResponse) => {
             console.log("[Lex] " + JSON.stringify(data))
             if (data.dialogState === "Fulfilled") {
                 // information locate in data.slots
                 // enough information, Lex fulfillment lambda will take action
-                return SendTextMessage(sendMessage, userID, data.message);
+                return sendTextMessage(data.message);
             } else if (data.dialogState === "ReadyForFulfillment") {
                 if (data.intentName === "ListBotFeatures") {
-                    return SendTextMessage(sendMessage, userID, HELP_MESSAGE);
+                    return sendTextMessage(HELP_MESSAGE);
                 }
             } else if (data.dialogState === "ElicitSlot") {
                 if (data.responseCard &&
@@ -33,27 +34,23 @@ export default (sendMessage: MessageSender, userID: string, text: string) => {
                     data.responseCard.genericAttachments[0].buttons
                 ) {
                     // send question with option buttons
-                    return SendTextMessageWithQuickReplies(
-                        sendMessage,
-                        userID,
-                        data.message,
-                        data.responseCard.genericAttachments[0].buttons.map(
-                            (d) => ({
-                                content_type: "text",
-                                title: d.text,
-                                payload: d.value
-                            })
-                        )
-                    );
+                    let replies = data
+                        .responseCard
+                        .genericAttachments[0]
+                        .buttons
+                        .map((d) => ({
+                            content_type: "text",
+                            title: d.text,
+                            payload: d.value
+                        }));
+                    return sendQuickReplyMessage(data.message)(replies);
                 } else {
                     // send question to ask for text input
-                    return SendTextMessage(sendMessage, userID, data.message);
+                    return sendTextMessage(data.message);
                 }
             } else if (data.dialogState === "ElicitIntent") {
-                return Sorry(sendMessage, userID);
+                return Sorry(sendTextMessage);
             }
-            return SendTextMessage(sendMessage, userID, data.message);
+            return sendTextMessage(data.message);
         })
         .then(() => "response by Lex message");
-
-};

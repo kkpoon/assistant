@@ -1,10 +1,9 @@
 import * as Rx from "@reactivex/rxjs";
-import { Say, Echo, Sorry, Ignore, LabelImage, Lex } from "./skills";
+import { Say, Sorry, Ignore, LabelImage, Lex } from "../../skills";
 import {
-    MessageSender,
-    MessageSenderWithAttachementUpload,
-    CreateMessageSender,
-    CreateMessageSenderWithAttachmentUpload,
+    SendTextMessage,
+    SendTextMessageWithQuickReplies,
+    SendAudioMessage,
     SendMarkSeen,
     SendTypingOff,
     SendTypingOn
@@ -19,47 +18,47 @@ interface Attachment {
     payload: { url?: string; sticker_id?: number };
 }
 
-export const CreateMessageHandler = (PAGE_ACCESS_TOKEN: string, GOOGLE_APIKEY: string) => {
-    const msgSender = CreateMessageSender(PAGE_ACCESS_TOKEN);
-    const attSender = CreateMessageSenderWithAttachmentUpload(PAGE_ACCESS_TOKEN);
+export const CreateMessageHandler =
+    (PAGE_ACCESS_TOKEN: string, GOOGLE_APIKEY: string) =>
+        (event: any): Promise<string> => {
+            let userID = event.sender.id;
 
-    return (event: any): Promise<string> => {
-        let userID = event.sender.id;
+            return SendMarkSeen(PAGE_ACCESS_TOKEN)(userID)
+                .then(() => SendTypingOn(PAGE_ACCESS_TOKEN)(userID))
+                .then(() => handleMessage(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY, event))
+                .catch((err) => {
+                    console.error("[facebook/message] message handle error: " + err);
+                    return SendTextMessage(PAGE_ACCESS_TOKEN)(userID)("Sorry, I've got brain problems.")
+                        .then(() => "response to tell error");
+                })
+                .then((result) =>
+                    SendTypingOff(PAGE_ACCESS_TOKEN)(userID)
+                        .then(() => result)
+                );
+        };
 
-        return SendMarkSeen(msgSender, userID)
-            .then(() => SendTypingOn(msgSender, userID))
-            .then(() => handleMessage(msgSender, attSender, GOOGLE_APIKEY, event))
-            .catch((err) => {
-                console.error("[facebook/message] message handle error: " + err);
-                return Echo(msgSender, userID, "Sorry, I've got brain problems.");
-            })
-            .then((result) => SendTypingOff(msgSender, userID).then(() => result));
-    };
-}
 
 const handleMessage = (
-    msgSender: MessageSender,
-    attSender: MessageSenderWithAttachementUpload,
+    PAGE_ACCESS_TOKEN: string,
     GOOGLE_APIKEY: string,
-    event: any
+    messageEvent: any
 ): Promise<string> => {
-    let userID = event.sender.id;
+    let userID = messageEvent.sender.id;
 
-    switch (detectMessageEventType(event)) {
+    switch (detectMessageEventType(messageEvent)) {
         case MessageEventType.ECHO:
             return Ignore();
         case MessageEventType.TEXT:
-            return handleTextMessage(msgSender, attSender, GOOGLE_APIKEY, event);
+            return handleTextMessage(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY, messageEvent);
         case MessageEventType.ATTACHMENTS:
-            return handleAttachmentsMessage(msgSender, attSender, event);
+            return handleAttachmentsMessage(PAGE_ACCESS_TOKEN, messageEvent);
         default:
-            return Sorry(msgSender, userID);
+            return Sorry(SendTextMessage(PAGE_ACCESS_TOKEN)(userID))
     }
 };
 
 const handleTextMessage = (
-    messageSender: MessageSender,
-    attachmentMessageSender: MessageSenderWithAttachementUpload,
+    PAGE_ACCESS_TOKEN: string,
     GOOGLE_APIKEY: string,
     messageEvent: any,
 ) => {
@@ -68,15 +67,24 @@ const handleTextMessage = (
     let messageText = message.text;
 
     if (messageText.match(/^say (.+)$/i)) {
-        return Say(messageSender, attachmentMessageSender, GOOGLE_APIKEY, userID, messageText);
+        return Say(
+            SendTextMessage(PAGE_ACCESS_TOKEN)(userID),
+            SendAudioMessage(PAGE_ACCESS_TOKEN)(userID),
+            GOOGLE_APIKEY,
+            messageText
+        );
     }
 
-    return Lex(messageSender, userID, messageText);
+    return Lex(
+        SendTextMessage(PAGE_ACCESS_TOKEN)(userID),
+        SendTextMessageWithQuickReplies(PAGE_ACCESS_TOKEN)(userID),
+        userID,
+        messageText
+    );
 };
 
 const handleAttachmentsMessage = (
-    messageSender: MessageSender,
-    attachmentMessageSender: MessageSenderWithAttachementUpload,
+    PAGE_ACCESS_TOKEN: string,
     messageEvent: any
 ) => {
     let message = messageEvent.message;
@@ -88,11 +96,11 @@ const handleAttachmentsMessage = (
             switch (att.type) {
                 case "image":
                     return Rx.Observable.fromPromise(
-                        handleImageMessage(messageSender, userID, att)
+                        handleImageMessage(PAGE_ACCESS_TOKEN, userID, att)
                     );
                 default:
                     return Rx.Observable.fromPromise(
-                        Sorry(messageSender, userID)
+                        Sorry(SendTextMessage(PAGE_ACCESS_TOKEN)(userID))
                     );
             }
         })
@@ -102,16 +110,20 @@ const handleAttachmentsMessage = (
 };
 
 const handleImageMessage = (
-    messageSender: MessageSender,
+    PAGE_ACCESS_TOKEN: string,
     userID: string,
     att: Attachment
 ) => {
     if (att.payload && att.payload.sticker_id) {
         return Ignore();
     } else if (att.payload && att.payload.url) {
-        return LabelImage(messageSender, userID, att.payload.url);
+        return LabelImage(
+            SendTextMessage(PAGE_ACCESS_TOKEN)(userID),
+            att.payload.url
+        );
     } else {
-        return Echo(messageSender, userID, "Sorry, I can't get the image");
+        return SendTextMessage(PAGE_ACCESS_TOKEN)(userID)("Sorry, I can't get the image")
+            .then(() => "response with error on getting image");
     }
 };
 
