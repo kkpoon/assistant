@@ -1,5 +1,5 @@
 import * as Rx from "@reactivex/rxjs";
-import { Say, Sorry, Ignore, LabelImage, Lex } from "../../skills";
+import { Say, Sorry, Ignore, LabelImage, Lex } from "../skills";
 import {
     SendTextMessage,
     SendTextMessageWithQuickReplies,
@@ -7,7 +7,7 @@ import {
     SendMarkSeen,
     SendTypingOff,
     SendTypingOn
-} from "./send-api";
+} from "../platforms/facebook/send-api";
 
 enum MessageEventType {
     UNKNOWN, TEXT, ATTACHMENTS, ECHO, POSTBACK
@@ -18,24 +18,25 @@ interface Attachment {
     payload: { url?: string; sticker_id?: number };
 }
 
-export const CreateMessageHandler =
-    (PAGE_ACCESS_TOKEN: string, GOOGLE_APIKEY: string) =>
-        (event: any): Promise<string> => {
-            let userID = event.sender.id;
+export const CreateMessageHandler = (
+    PAGE_ACCESS_TOKEN: string,
+    GOOGLE_APIKEY: string
+) => (event: any): Promise<string> => {
+    let userID = event.sender.id;
 
-            return SendMarkSeen(PAGE_ACCESS_TOKEN)(userID)
-                .then(() => SendTypingOn(PAGE_ACCESS_TOKEN)(userID))
-                .then(() => handleMessage(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY, event))
-                .catch((err) => {
-                    console.error("[facebook/message] message handle error: " + err);
-                    return SendTextMessage(PAGE_ACCESS_TOKEN)(userID)("Sorry, I've got brain problems.")
-                        .then(() => "response to tell error");
-                })
-                .then((result) =>
-                    SendTypingOff(PAGE_ACCESS_TOKEN)(userID)
-                        .then(() => result)
-                );
-        };
+    return SendMarkSeen(PAGE_ACCESS_TOKEN)(userID)
+        .then(() => SendTypingOn(PAGE_ACCESS_TOKEN)(userID))
+        .then(() => handleMessage(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY, event))
+        .catch((err) => {
+            console.error("[facebook/message] message handle error: " + err);
+            return SendTextMessage(PAGE_ACCESS_TOKEN)(userID)("Sorry, I've got brain problems.")
+                .then(() => "response to tell error");
+        })
+        .then((result) =>
+            SendTypingOff(PAGE_ACCESS_TOKEN)(userID)
+                .then(() => result)
+        );
+};
 
 
 const handleMessage = (

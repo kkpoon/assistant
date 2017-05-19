@@ -1,14 +1,19 @@
 import * as awsServerlessExpress from "aws-serverless-express";
 import { Context } from "aws-lambda";
 import CreateWebhook from "./platforms";
+import { CreateMessageHandler } from "./examples/kkpoon-assistant";
+
+const PAGE_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+const GOOGLE_APIKEY = process.env.GOOGLE_APIKEY;
+
+const messageHandler = CreateMessageHandler(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY);
 
 const messengerWebhookServer = awsServerlessExpress
     .createServer(CreateWebhook({
         messenger: {
-            PAGE_ACCESS_TOKEN: process.env.FACEBOOK_PAGE_ACCESS_TOKEN,
             APP_SECRET: process.env.FACEBOOK_APP_SECRET,
             VALIDATION_TOKEN: process.env.FACEBOOK_VALIDATION_TOKEN,
-            GOOGLE_APIKEY: process.env.GOOGLE_APIKEY
+            messageHandler: messageHandler
         }
     }));
 
