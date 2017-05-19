@@ -23,8 +23,11 @@ export const WebhookMessageHandler = (msgHandler: FacebookMessageHandler<string>
             Rx.Observable.from(data.entry || [])
                 .mergeMap((entry: any) => Rx.Observable.from(entry.messaging))
                 .mergeMap(event => Rx.Observable.fromPromise(msgHandler(event)))
-                .subscribe((result) => {
-                    console.log("[facebook/webhook] message handled, result: " + result);
+                .subscribe((result: any) => {
+                    console.log(
+                        "[facebook/webhook] message handled, result: " +
+                        JSON.stringify(result)
+                    );
                 }, (err: Error) => {
                     console.error("[facebook/webhook] Error: " + err);
                     console.error("[facebook/webhook] send HTTP 200 status");

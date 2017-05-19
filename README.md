@@ -1,3 +1,3 @@
 # assistant
 
-kkpoon's personal assistant
+This is a bot message exchange platform.
