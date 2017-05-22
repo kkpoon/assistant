@@ -18,12 +18,12 @@ import * as crypto from "crypto";
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import { WebhookValidationHandler, WebhookMessageHandler } from "./webhook";
-import { FacebookMessageHandler } from "./message";
+import { MessageHandler } from "../../message";
 
 export interface MessengerBotOptions {
     APP_SECRET: string;
     VALIDATION_TOKEN: string;
-    messageHandler: FacebookMessageHandler<any>
+    messageHandler: MessageHandler<any>
 };
 
 export const CreateMessengerBot = (options: MessengerBotOptions): express.Router => {

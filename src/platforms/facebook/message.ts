@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
+import { MessageHandler } from "../../message";
+
 enum MessageEventType { UNKNOWN, ECHO, TEXT, ATTACHMENTS, POSTBACK };
 
-export type FacebookMessageHandler<T> = (message: any) => Promise<T>;
-
 export interface FacebookMessageHandlerOptions<T> {
-    echoHandler: FacebookMessageHandler<T>;
-    textHandler: FacebookMessageHandler<T>;
-    attachmentsHandler: FacebookMessageHandler<T>;
-    postbackHandler: FacebookMessageHandler<T>;
-    unknownHandler: FacebookMessageHandler<T>;
+    echoHandler: MessageHandler<T>;
+    textHandler: MessageHandler<T>;
+    attachmentsHandler: MessageHandler<T>;
+    postbackHandler: MessageHandler<T>;
+    unknownHandler: MessageHandler<T>;
 }
 
 export interface FacebookMessageAttachment {

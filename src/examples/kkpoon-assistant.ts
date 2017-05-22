@@ -16,6 +16,7 @@
 
 import * as Rx from "@reactivex/rxjs";
 import { Say, Sorry, Ignore, LabelImage, Lex } from "../skills";
+import { MessageHandler } from "../message";
 import {
     SendTextMessage,
     SendTextMessageWithQuickReplies,
@@ -25,14 +26,13 @@ import {
     SendTypingOn
 } from "../platforms/facebook/send-api";
 import {
-    FacebookMessageHandler,
     FacebookMessageAttachment,
     CreateFacebookMessageHandler
 } from "../platforms/facebook/message";
 
 
 export const CreateKkpoonAssistant =
-    (PAGE_ACCESS_TOKEN: string, GOOGLE_APIKEY: string): FacebookMessageHandler<string> =>
+    (PAGE_ACCESS_TOKEN: string, GOOGLE_APIKEY: string): MessageHandler<string> =>
         CreateFacebookMessageHandler<string>({
             echoHandler: (message) => Ignore(),
             textHandler: handleTextMessage(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY),
@@ -42,7 +42,7 @@ export const CreateKkpoonAssistant =
         });
 
 const humanActionProxy = (PAGE_ACCESS_TOKEN: string) =>
-    (handler: FacebookMessageHandler<string>) => (message: any) => {
+    (handler: MessageHandler<string>) => (message: any) => {
         let userID = message.sender.id;
 
         return SendMarkSeen(PAGE_ACCESS_TOKEN)(userID)

@@ -16,7 +16,7 @@
 
 import * as express from "express";
 import * as Rx from "@reactivex/rxjs";
-import { FacebookMessageHandler } from "./message";
+import { MessageHandler } from "../../message";
 
 export const WebhookValidationHandler =
     (VALIDATION_TOKEN: string) =>
@@ -31,7 +31,7 @@ export const WebhookValidationHandler =
             }
         };
 
-export const WebhookMessageHandler = (msgHandler: FacebookMessageHandler<string>) =>
+export const WebhookMessageHandler = (msgHandler: MessageHandler<string>) =>
     (req: express.Request, res: express.Response, next: express.NextFunction) => {
         let data = req.body;
         console.log("[facebook/webhook] message received: " + JSON.stringify(data));
