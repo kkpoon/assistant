@@ -5,6 +5,12 @@
 
 This is a bot message exchange platform.
 
+## Architecture
+
+The following diagram shows the architecture design.
+
+![Architecture](assets/architecture.png)
+
 ## LICENSE
 
 ```
