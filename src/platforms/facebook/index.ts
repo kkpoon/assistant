@@ -18,46 +18,13 @@ import * as crypto from "crypto";
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import { WebhookValidationHandler, WebhookMessageHandler } from "./webhook";
-
-enum MessageEventType { UNKNOWN, ECHO, TEXT, ATTACHMENTS, POSTBACK };
-
-export type FacebookMessageHandler<T> = (message: any) => Promise<T>;
+import { FacebookMessageHandler } from "./message";
 
 export interface MessengerBotOptions {
     APP_SECRET: string;
     VALIDATION_TOKEN: string;
     messageHandler: FacebookMessageHandler<any>
 };
-
-export interface FacebookMessageHandlerOptions<T> {
-    echoHandler: FacebookMessageHandler<T>;
-    textHandler: FacebookMessageHandler<T>;
-    attachmentsHandler: FacebookMessageHandler<T>;
-    postbackHandler: FacebookMessageHandler<T>;
-    unknownHandler: FacebookMessageHandler<T>;
-}
-
-export interface FacebookMessageAttachment {
-    type: string;
-    payload: { url?: string; sticker_id?: number };
-}
-
-export const CreateFacebookMessageHandler =
-    <T>(options: FacebookMessageHandlerOptions<T>) =>
-        (message: any): Promise<T> => {
-            switch (detectMessageEventType(message)) {
-                case MessageEventType.ECHO:
-                    return options.echoHandler(message);
-                case MessageEventType.TEXT:
-                    return options.textHandler(message);
-                case MessageEventType.ATTACHMENTS:
-                    return options.attachmentsHandler(message);
-                case MessageEventType.POSTBACK:
-                    return options.postbackHandler(message);
-                default:
-                    return options.unknownHandler(message);
-            }
-        };
 
 export const CreateMessengerBot = (options: MessengerBotOptions): express.Router => {
     const verifySignature = SignatureVerifier(options.APP_SECRET);
@@ -90,20 +57,3 @@ const SignatureVerifier =
                 }
             }
         };
-
-const detectMessageEventType = (messageEvent: any): MessageEventType => {
-    if (messageEvent.message) {
-        let message = messageEvent.message;
-
-        if (message.is_echo) {
-            return MessageEventType.ECHO;
-        } else if (message.text) {
-            return MessageEventType.TEXT;
-        } else if (message.attachments) {
-            return MessageEventType.ATTACHMENTS;
-        }
-    } else if (messageEvent.postback) {
-        return MessageEventType.POSTBACK;
-    }
-    return MessageEventType.UNKNOWN;
-}

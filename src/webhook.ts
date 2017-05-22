@@ -17,21 +17,25 @@
 import * as awsServerlessExpress from "aws-serverless-express";
 import { Context } from "aws-lambda";
 import CreateWebhook from "./platforms";
-import { CreateKkpoonAssistant } from "./examples/kkpoon-assistant";
+import { SNSPublishMessage } from "./services/aws";
 
-const PAGE_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
-const GOOGLE_APIKEY = process.env.GOOGLE_APIKEY;
+const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+const FACEBOOK_VALIDATION_TOKEN = process.env.FACEBOOK_VALIDATION_TOKEN;
+const SNS_MESSAGE_HANDLE_TOPIC = process.env.SNS_MESSAGE_HANDLE_TOPIC;
 
-const messageHandler = CreateKkpoonAssistant(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY);
+const messageHandler = (message: any): Promise<string> =>
+    SNSPublishMessage(SNS_MESSAGE_HANDLE_TOPIC)(message)
+        .then(() => `the message is sent to SNS topic: ${SNS_MESSAGE_HANDLE_TOPIC}`);
 
 const messengerWebhookServer = awsServerlessExpress
     .createServer(CreateWebhook({
         messenger: {
-            APP_SECRET: process.env.FACEBOOK_APP_SECRET,
-            VALIDATION_TOKEN: process.env.FACEBOOK_VALIDATION_TOKEN,
+            APP_SECRET: FACEBOOK_APP_SECRET,
+            VALIDATION_TOKEN: FACEBOOK_VALIDATION_TOKEN,
             messageHandler: messageHandler
         }
     }));
+
 
 exports.handler = (event: any, context: Context) =>
     awsServerlessExpress.proxy(messengerWebhookServer, event, context);

@@ -17,6 +17,16 @@
 import * as AWS from "aws-sdk";
 import * as _ from "lodash";
 
+export const SNSPublishMessage =
+    (topic: string) => (data: any): Promise<AWS.SNS.PublishResponse> =>
+        new Promise((resolve, reject) => {
+            const sns = new AWS.SNS();
+            sns.publish({
+                TopicArn: topic,
+                Message: JSON.stringify(data),
+            }, (err, data) => err ? reject(err) : resolve(data));
+        });
+
 export const PollySpeakText =
     (text: string, voiceID: string): Promise<AWS.Polly.SynthesizeSpeechOutput> =>
         new Promise((resolve, reject) => {

@@ -16,7 +16,7 @@
 
 import * as express from "express";
 import * as Rx from "@reactivex/rxjs";
-import { FacebookMessageHandler } from "./";
+import { FacebookMessageHandler } from "./message";
 
 export const WebhookValidationHandler =
     (VALIDATION_TOKEN: string) =>

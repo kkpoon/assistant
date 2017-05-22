@@ -28,7 +28,7 @@ import {
     FacebookMessageHandler,
     FacebookMessageAttachment,
     CreateFacebookMessageHandler
-} from "../platforms/facebook";
+} from "../platforms/facebook/message";
 
 
 export const CreateKkpoonAssistant =

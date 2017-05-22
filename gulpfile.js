@@ -38,16 +38,55 @@ gulp.task("node-mods", function() {
         .pipe(install({ production: true }));
 });
 
-gulp.task("upload", function() {
+gulp.task("zip", function() {
     return gulp
         .src(["dist/**/*", "!dist/package.json"])
         .pipe(zip("dist.zip"))
+        .pipe(gulp.dest("."));
+})
+
+gulp.task("upload:webhook", function() {
+    return gulp
+        .src("dist.zip")
         .pipe(
             lambda(
                 {
-                    Description: "kkpoon assistant",
-                    FunctionName: "kkpoon_assistant",
-                    Handler: "index.handler",
+                    Description: "kkpoon assistant webhook",
+                    FunctionName: "kkpoon_assistant_webhook",
+                    Handler: "webhook.handler",
+                    Role: process.env.LAMBDA_ROLE_ARN,
+                    Timeout: 3,
+                    MemorySize: 128,
+                    Runtime: "nodejs6.10",
+                    Environment: {
+                        Variables: {
+                            FACEBOOK_APP_SECRET: process.env
+                                .FACEBOOK_APP_SECRET,
+                            FACEBOOK_VALIDATION_TOKEN: process.env
+                                .FACEBOOK_VALIDATION_TOKEN,
+                            SNS_MESSAGE_HANDLE_TOPIC: process.env
+                                .SNS_MESSAGE_HANDLE_TOPIC
+                        }
+                    }
+                },
+                {
+                    publish: true,
+                    region: "us-east-1"
+                }
+            )
+        )
+        .pipe(gulp.dest("."));
+});
+
+gulp.task("upload:messagehandler", function() {
+    return gulp
+        .src("dist.zip")
+        .pipe(
+            lambda(
+                {
+                    Description: "kkpoon assistant message handler",
+                    FunctionName: "kkpoon_assistant_message_handler",
+                    Handler: "message.handler",
                     Role: process.env.LAMBDA_ROLE_ARN,
                     Timeout: 10,
                     MemorySize: 128,
@@ -56,10 +95,6 @@ gulp.task("upload", function() {
                         Variables: {
                             FACEBOOK_PAGE_ACCESS_TOKEN: process.env
                                 .FACEBOOK_PAGE_ACCESS_TOKEN,
-                            FACEBOOK_APP_SECRET: process.env
-                                .FACEBOOK_APP_SECRET,
-                            FACEBOOK_VALIDATION_TOKEN: process.env
-                                .FACEBOOK_VALIDATION_TOKEN,
                             GOOGLE_APIKEY: process.env
                                 .GOOGLE_APIKEY
                         }
@@ -78,7 +113,8 @@ gulp.task("deploy:lambda", function(callback) {
     return runSequence(
         ["clean"],
         ["ts", "node-mods"],
-        ["upload"],
+        ["zip"],
+        ["upload:webhook", "upload:messagehandler"],
         callback
     );
 });
