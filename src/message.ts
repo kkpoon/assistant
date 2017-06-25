@@ -15,19 +15,19 @@
  */
 
 import { Context, Callback } from "aws-lambda";
-import { CreateKkpoonAssistant } from "./examples/kkpoon-assistant";
+import { CreateAssistant } from "./assistant";
 
 export type MessageHandler<T> = (message: any) => Promise<T>;
 
 const PAGE_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
 const GOOGLE_APIKEY = process.env.GOOGLE_APIKEY;
 
-const kkpoonAssistant = CreateKkpoonAssistant(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY);
+const kkpoonAssistant = CreateAssistant(PAGE_ACCESS_TOKEN, GOOGLE_APIKEY);
 
 exports.handler = (event: any, context: Context, callback: Callback) => {
     const message = event.Records[0].Sns.Message;
     console.log(message);
     kkpoonAssistant(JSON.parse(message))
-        .then((result) => callback(null, result))
-        .catch((err) => callback(err));
-}
+        .then(result => callback(null, result))
+        .catch(err => callback(err));
+};
