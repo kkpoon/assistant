@@ -20,3 +20,4 @@ export { default as LabelImage } from "./label-image";
 export { default as Lex } from "./lex";
 export { default as Say } from "./say";
 export { default as Sorry } from "./sorry";
+export { default as Wit } from "./wit";

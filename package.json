@@ -8,7 +8,8 @@
         "gulp": "gulp",
         "build": "tsc",
         "test": "jest",
-        "deploy:lambda": "gulp deploy:lambda"
+        "deploy:webhook": "gulp deploy:webhook",
+        "deploy:messagehandler": "gulp deploy:messagehandler"
     },
     "repository": {
         "type": "git",
@@ -23,13 +24,9 @@
     "devDependencies": {
         "@types/aws-lambda": "^0.0.10",
         "@types/aws-sdk": "^2.7.0",
-        "@types/aws-serverless-express": "^2.1.0",
-        "@types/body-parser": "^1.16.3",
-        "@types/express": "^4.0.35",
         "@types/form-data": "^0.0.33",
         "@types/jest": "^19.2.3",
         "@types/lodash": "^4.14.64",
-        "@types/morgan": "^1.7.32",
         "@types/node-fetch": "^1.6.7",
         "codecov": "^2.2.0",
         "del": "^2.2.2",
@@ -45,14 +42,15 @@
     },
     "dependencies": {
         "@reactivex/rxjs": "^5.3.1",
+        "@types/node-wit": "^4.2.2",
+        "@types/superagent": "^3.5.2",
         "aws-sdk": "^2.49.0",
-        "aws-serverless-express": "^2.2.0",
-        "body-parser": "^1.17.1",
-        "express": "^4.15.2",
+        "facebook-webhook-lambda": "^1.0.2",
         "form-data": "^2.1.4",
         "lodash": "^4.17.4",
-        "morgan": "^1.8.1",
-        "node-fetch": "^1.6.3"
+        "node-fetch": "^1.6.3",
+        "node-wit": "^4.2.0",
+        "superagent": "^3.5.2"
     },
     "jest": {
         "transform": {

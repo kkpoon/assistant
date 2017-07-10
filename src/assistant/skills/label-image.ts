@@ -15,7 +15,7 @@
  */
 
 import fetch from "node-fetch";
-import { RekognitionImageLabels, RekognitionFaceAnalysis } from "../services/aws";
+import { RekognitionImageLabels, RekognitionFaceAnalysis } from "../../services/aws";
 
 export default (
     sendTextMessage: (text: string) => Promise<any>,

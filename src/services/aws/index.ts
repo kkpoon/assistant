@@ -17,6 +17,38 @@
 import * as AWS from "aws-sdk";
 import * as _ from "lodash";
 
+export const S3ReadJSON =
+    (bucket: string) => (key: string): Promise<AWS.S3.GetObjectOutput> =>
+        new Promise((resolve, reject) => {
+            const s3 = new AWS.S3();
+            s3.getObject({
+                Bucket: bucket,
+                Key: key
+            }, (err, data) => err ? reject(err) : resolve(JSON.parse(data.Body.toString())));
+        });
+
+export const S3WriteJSON =
+    (bucket: string) => (key: string) => (data: any): Promise<AWS.S3.PutObjectOutput> =>
+        new Promise((resolve, reject) => {
+            const s3 = new AWS.S3();
+            s3.putObject({
+                Bucket: bucket,
+                Key: key,
+                Body: JSON.stringify(data),
+                ContentType: "application/json"
+            }, (err, data) => err ? reject(err) : resolve(data));
+        });
+
+export const S3Remove =
+    (bucket: string) => (key: string): Promise<AWS.S3.DeleteObjectOutput> =>
+        new Promise((resolve, reject) => {
+            const s3 = new AWS.S3();
+            s3.deleteObject({
+                Bucket: bucket,
+                Key: key
+            }, (err, data) => err ? reject(err) : resolve(data));
+        });
+
 export const SNSPublishMessage =
     (topic: string) => (data: any): Promise<AWS.SNS.PublishResponse> =>
         new Promise((resolve, reject) => {

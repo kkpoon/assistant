@@ -14,28 +14,36 @@
  * limitations under the License.
  */
 
-import * as awsServerlessExpress from "aws-serverless-express";
-import { Context } from "aws-lambda";
-import CreateWebhook from "./platforms";
+import { APIGatewayEvent, Context, ProxyCallback } from "aws-lambda";
+import { WebhookRequestHandler as FBWebHook } from "facebook-webhook-lambda";
+import { Observable } from "@reactivex/rxjs";
 import { SNSPublishMessage } from "./services/aws";
 
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
-const FACEBOOK_VALIDATION_TOKEN = process.env.FACEBOOK_VALIDATION_TOKEN;
+const FACEBOOK_VERIFICATION_TOKEN = process.env.FACEBOOK_VERIFICATION_TOKEN;
 const SNS_MESSAGE_HANDLE_TOPIC = process.env.SNS_MESSAGE_HANDLE_TOPIC;
 
-const messageHandler = (message: any): Promise<string> =>
-    SNSPublishMessage(SNS_MESSAGE_HANDLE_TOPIC)(message)
-        .then(() => `the message is sent to SNS topic: ${SNS_MESSAGE_HANDLE_TOPIC}`);
-
-const messengerWebhookServer = awsServerlessExpress
-    .createServer(CreateWebhook({
-        messenger: {
-            APP_SECRET: FACEBOOK_APP_SECRET,
-            VALIDATION_TOKEN: FACEBOOK_VALIDATION_TOKEN,
-            messageHandler: messageHandler
+exports.facebookHandler = FBWebHook({
+    appSecret: FACEBOOK_APP_SECRET,
+    verifyToken: FACEBOOK_VERIFICATION_TOKEN,
+    updateHandler: (event: any): Promise<string> => {
+        if (event.object == "page") { // only interested in messenger events
+            return Observable.from(event.entry || [])
+                .mergeMap((entry: any) => Observable.from(entry.messaging))
+                .mergeMap(message =>
+                    Observable.fromPromise(
+                        SNSPublishMessage(SNS_MESSAGE_HANDLE_TOPIC)(message)
+                    )
+                )
+                .reduce((acc, curr) => acc + 1, 0)
+                .map(cnt => `${cnt} messages are sent to SNS topic: ${SNS_MESSAGE_HANDLE_TOPIC}`)
+                .toPromise()
+                .then((text) => {
+                    console.log(text);
+                    return "";
+                });
         }
-    }));
-
-
-exports.handler = (event: any, context: Context) =>
-    awsServerlessExpress.proxy(messengerWebhookServer, event, context);
+        console.log("Not handle this event: " + JSON.stringify(event));
+        return Promise.resolve("");
+    }
+});

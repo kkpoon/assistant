@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { PollySpeakSSML, PollyGetVoice } from "../services/aws";
-import { DetectLanguage } from "../services/google-cloud";
+import { PollySpeakSSML, PollyGetVoice } from "../../services/aws";
+import { DetectLanguage } from "../../services/google-cloud";
 
 export default (
     sendTextMessage: (text: string) => Promise<any>,

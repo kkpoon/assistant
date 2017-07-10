@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { Lex } from "../services/aws";
+import { Lex } from "../../services/aws";
 import { Sorry } from "./";
-import { QuickReply } from "../message-sender";
+import { QuickReply } from "../../message-sender";
 
 const HELP_MESSAGE = `It's been my pleasure to serve you.
 1. You could ask me to say something in English. Just ask me "say blah blah blah".
