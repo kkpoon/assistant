@@ -48,6 +48,7 @@
         "facebook-webhook-lambda": "^1.0.2",
         "form-data": "^2.1.4",
         "lodash": "^4.17.4",
+        "moment": "^2.18.1",
         "node-fetch": "^1.6.3",
         "node-wit": "^4.2.0",
         "superagent": "^3.5.2"
